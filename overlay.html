@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OBS Overlay</title>
+  <style>
+    :root{color-scheme:dark;--overlay-scale:1;--floating-scale:1}
+    html,body{margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;font-family:Inter,system-ui,sans-serif}
+    body{display:flex;align-items:stretch;justify-content:center;background:transparent}
+    .stage{width:100vw;height:100vh;position:relative;overflow:hidden;background:transparent}
+    .floating-scroller{position:absolute;inset:0;pointer-events:none;z-index:1;overflow:hidden}
+    .floating-text{position:absolute;left:4%;top:18%;white-space:nowrap;font-family:'Arial Black',sans-serif;font-size:calc(28px * var(--floating-scale));color:#d1d1d1;text-shadow:2px 2px 3px rgba(0,0,0,.6);letter-spacing:.04em;opacity:.9;animation:floatingX 12s linear infinite alternate,floatingY 7s ease-in-out infinite alternate}
+    @keyframes floatingX{0%{left:4%}50%{left:42%}100%{left:72%}}
+    @keyframes floatingY{0%{top:18%}50%{top:24%}100%{top:30%}}
+    .ticker-wrap{position:absolute;left:0;right:0;bottom:30px;color:#fff;font-weight:700;text-transform:uppercase;overflow:hidden;z-index:2}
+    .ticker1{height:calc(34px * var(--overlay-scale));background:#10a9e9;display:flex;align-items:center;font-size:calc(12px * var(--overlay-scale));letter-spacing:.02em}
+    .label1{height:100%;background:transparent;display:flex;align-items:center;padding:0 calc(15px * var(--overlay-scale));flex:0 0 15%;min-width:0;white-space:nowrap;z-index:3;position:relative}
+    .ticker2{height:calc(30px * var(--overlay-scale));background:#092d42;display:flex;align-items:center;font-size:calc(11px * var(--overlay-scale))}
+    .datebox{height:calc(24px * var(--overlay-scale));flex:0 0 5%;min-width:0;margin:calc(3px * var(--overlay-scale)) 0;display:flex;flex-direction:column;align-items:stretch;justify-content:center;z-index:4;line-height:1;text-align:center;border-radius:5px;overflow:hidden}
+    .date-day{font-size:calc(9px * var(--overlay-scale));font-weight:800;background:#fff;color:#000;flex:1;display:flex;align-items:center;justify-content:center}.date-month{font-size:calc(9px * var(--overlay-scale));font-weight:800;letter-spacing:.05em;background:#10a9e9;color:#000;flex:1;display:flex;align-items:center;justify-content:center}
+    .label2{height:100%;background:#061f2d;display:flex;align-items:center;padding:0 calc(15px * var(--overlay-scale));min-width:calc(130px * var(--overlay-scale));white-space:nowrap;z-index:3;position:relative}
+    .side-text{height:100%;display:flex;align-items:center;justify-content:center;padding:0 calc(10px * var(--overlay-scale));white-space:nowrap;overflow:hidden;font-size:calc(10px * var(--overlay-scale));font-weight:800}.top-right{flex:0 0 15%;min-width:0}.bottom-venue{min-width:calc(190px * var(--overlay-scale));justify-content:flex-start}.bottom-right{flex:0 0 25%;min-width:0}
+    .upcoming-event{flex:0 0 20%;min-width:0;height:100%;display:flex;align-items:center;padding:0 calc(10px * var(--overlay-scale));white-space:nowrap;overflow:hidden;font-size:calc(10px * var(--overlay-scale));font-weight:800}
+    .transition-out .upcoming-event{opacity:0;transform:translateX(-28px);transition:.4s cubic-bezier(.22,1,.36,1)}
+    .transition-in .upcoming-event{animation:eventSlideIn .55s cubic-bezier(.22,1,.36,1) both}
+    @keyframes eventSlideIn{from{opacity:0;transform:translateX(28px);filter:blur(2px)}to{opacity:1;transform:translateX(0);filter:blur(0)}}
+    .animated-divider{width:10px;height:100%;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none;z-index:5;background:transparent;color:#fff;font-size:inherit;font-weight:inherit;line-height:1}
+    .animated-divider:before{content:"|";position:static;width:auto;height:auto;background:none;transform:none;opacity:.9;animation:none}
+    @keyframes dividerBuild{0%{transform:scaleY(.15);opacity:0}45%{transform:scaleY(1);opacity:1}100%{transform:scaleY(1);opacity:.78}}
+    .ticker1 .marquee-window{clip-path:inset(0 0 0 0);flex:0 0 70%;max-width:70%}
+    .ticker2 .marquee-window{clip-path:inset(0 0 0 0);flex:0 0 50%;max-width:50%}
+    .marquee-window{overflow:hidden;flex:1;height:100%;white-space:nowrap;position:relative;max-width:100%}
+    .marquee{position:absolute;left:0;top:0;height:100%;width:max-content;min-width:max-content;white-space:nowrap;will-change:transform}.marquee-track{display:flex;align-items:center;height:100%;width:max-content;min-width:max-content;white-space:nowrap}.marquee-group{display:flex;align-items:center;height:100%;white-space:nowrap;flex:none}.marquee span{padding:0 16px;display:inline-block;white-space:nowrap;flex:none}.marquee-separator{display:inline-block;padding:0 20px;opacity:.8;white-space:nowrap;flex:none}
+    .marquee.exit,.marquee.enter{transform:none;opacity:1;filter:none}
+    .marquee-window:before,.marquee-window:after{content:"";display:none}
+    .transition-out .animated-divider:before,.transition-in .animated-divider:before,.transition-out .animated-divider:after,.transition-in .animated-divider:after{animation:none;transform:none;opacity:.9}
+    .transition-out .side-text{opacity:.25;transform:translateX(8px);transition:.35s ease}.transition-in .side-text{opacity:1;transform:translateX(0);transition:.5s ease}
+    @keyframes dividerOut{to{transform:translateX(14px) scaleY(.15);opacity:0}}
+    @keyframes dividerOutDiamond{to{transform:rotate(-45deg) translateX(14px);opacity:0}}
+    @keyframes dividerIn{from{transform:translateX(-14px) scaleY(.15);opacity:0}to{transform:translateX(0) scaleY(1);opacity:.82}}
+    @keyframes dividerInDiamond{from{transform:rotate(-45deg) translateX(-14px);opacity:0}to{transform:rotate(-45deg) translateX(0);opacity:.95}}
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="floating-scroller"><div class="floating-text" id="floatingTextDisplay">YOUR_CHANNEL_NAME</div></div>
+    <div class="ticker-wrap" id="tickerWrap">
+      <div class="ticker1" id="strip1">
+        <div class="label1" id="label1">UPCOMING EVENTS</div>
+        <div class="animated-divider"></div>
+        <div class="marquee-window" id="window1"><div class="marquee" id="marquee1"></div></div>
+        <div class="animated-divider"></div>
+        <div class="side-text top-right" id="topRightDisplay"></div>
+      </div>
+      <div class="ticker2" id="strip2">
+        <div class="datebox"><span class="date-month" id="dateMonthPreview">AUG</span><span class="date-day" id="dateDayPreview">11</span></div>
+        <div class="upcoming-event" id="venuePreview">MALWA VS HARYANA</div>
+        <div class="animated-divider"></div>
+        <div class="marquee-window" id="window2"><div class="marquee marquee2" id="marquee2"></div></div>
+        <div class="animated-divider"></div>
+        <div class="side-text bottom-right" id="rightPreview">MAHINDERPUR (TARN TARAN)</div>
+      </div>
+    </div>
+  </div>
+  <script>
+  (function(){
+    var top=0,eventIndex=0,rightIndex=0,bottomTextIndex=0;
+    var state={topLines:[],bottomLines:[],rightLines:[],events:[]};
+    var marqueeSettings={marquee1:8000,marquee2:8000};
+
+    function decodeSettings(raw){
+      try{
+        var utf8=atob(raw);
+        var json=decodeURIComponent(utf8.split('').map(function(c){return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);}).join(''));
+        return JSON.parse(json);
+      }catch(e){return null;}
+    }
+    function getParam(name){
+      var hash=(window.location.hash||'').replace(/^#/,'');
+      var hashMatch=new RegExp('(?:^|&)'+name+'=([^&]+)').exec(hash);
+      if(hashMatch){return decodeURIComponent(hashMatch[1]);}
+      var match=new RegExp('[?&]'+name+'=([^&]+)').exec(window.location.search);
+      return match?decodeURIComponent(match[1]):'';
+    }
+    function parseSettings(){
+      var raw=getParam('cfg');
+      if(raw){
+        var decoded=decodeSettings(raw);
+        if(decoded){return decoded;}
+        try{return JSON.parse(raw);}catch(e){}
+      }
+      try{
+        var saved=window.localStorage.getItem('obsTickerSettings');
+        if(saved){return JSON.parse(saved);}
+      }catch(e){}
+      return {
+        topLabel:'UPCOMING EVENTS',
+        topText:'ALL OPEN CLUB SEMI FINAL | MALWA VS HARYANA | LIVE NOW\nUPCOMING KABADDI SEMI FINAL | MALWA VS HARYANA\nPUNJAB CLUB CHAMPIONSHIP | LIVE',
+        floatingText:'YOUR_CHANNEL_NAME',
+        floatingScale:'1',
+        topRightText:'',
+        bottomText:'ALL OPEN CLUB SEMI FINAL | MAJHA | DOABA\nKABADDI TOURNAMENT | LIVE COMMENTARY\nPUNJAB CLUB FINAL | TODAY 7:00 PM',
+        bottomRight:'MAHINDERPUR (TARN TARAN)\nMANUKE GILL (MOGA)\nPUNJAB CLUB',
+        upcomingEvents:'11 AUG | MALWA VS HARYANA\n14 AUG | MAJHA VS DOABA\n18 AUG | PUNJAB CLUB FINAL\n22 AUG | DELHI VS PUNJAB',
+        fontScale:'1',
+        color1:'#10a9e9',
+        color2:'#092d42',
+        showTop:true,
+        showBottom:true,
+        topTextSpeed:8,
+        bottomTextSpeed:8
+      };
+    }
+    function parseEvents(text){
+      var lines=(text||'').split('\n'); var out=[];
+      for(var i=0;i<lines.length;i++){
+        var p=lines[i].split('|');
+        if(p.length>1){out.push({date:p[0].trim(),text:p.slice(1).join('|').trim()});}
+      }
+      return out;
+    }
+    function setDate(s){
+      var p=(s||'').split(/\s+/);
+      document.getElementById('dateDayPreview').textContent=p[0]||'';
+      document.getElementById('dateMonthPreview').textContent=(p[1]||'').toUpperCase();
+    }
+    function parseQuotedItems(value){
+      var text=(value||'').trim();
+      if(!text)return [];
+      var items=[];
+      var re=/"([^"]+)"/g;
+      var m;
+      while((m=re.exec(text))!==null){items.push(m[1].trim());}
+      if(items.length){return items.filter(Boolean);}
+      return text.split(',').map(function(x){return x.trim();}).filter(Boolean);
+    }
+    function textLines(value){return parseQuotedItems(value);}
+    function rightTexts(value){return parseQuotedItems(value);}
+
+    function populateMarquee(marqueeId,texts,speedMs){
+      var marquee=document.getElementById(marqueeId);
+      marquee.innerHTML='';
+      if(!texts || !texts.length)return;
+
+      var cleanTexts=texts.filter(Boolean);
+      if(!cleanTexts.length)cleanTexts=[''];
+
+      var span=document.createElement('span');
+      span.textContent=cleanTexts.join(' • ');
+      span.style.position='absolute';
+      span.style.top='50%';
+      span.style.transform='translateY(-50%)';
+      span.style.whiteSpace='nowrap';
+      marquee.appendChild(span);
+
+      requestAnimationFrame(function(){
+        var windowEl=marquee.parentElement;
+        var windowWidth=windowEl.getBoundingClientRect().width;
+        var textWidth=span.getBoundingClientRect().width;
+        var distance=windowWidth+textWidth;
+        var seconds=Math.max(4,(speedMs||8000)/1000);
+        var pxPerSecond=distance/seconds;
+        var startTime=null;
+
+        function animate(now){
+          if(startTime===null)startTime=now;
+          var elapsed=(now-startTime)/1000;
+          var x=windowWidth-(elapsed*pxPerSecond);
+
+          // Immediately restart from the right after the whole text exits left.
+          if(x <= -textWidth){
+            startTime=now;
+            x=windowWidth;
+          }
+          span.style.left=x+'px';
+          requestAnimationFrame(animate);
+        }
+
+        span.style.left=windowWidth+'px';
+        requestAnimationFrame(animate);
+      });
+    }
+
+    function applySettings(data){
+      var settings=data||{};
+      var scale=parseFloat(settings.fontScale || 1);
+      if(isNaN(scale)) scale=1;
+      document.documentElement.style.setProperty('--overlay-scale', String(Math.min(1.5,Math.max(0.7,scale))));
+      var floatingScale=parseFloat(settings.floatingScale || 1);
+      if(isNaN(floatingScale)) floatingScale=1;
+      document.documentElement.style.setProperty('--floating-scale', String(Math.min(2,Math.max(0.5,floatingScale))));
+      document.getElementById('label1').textContent=settings.topLabel||'UPCOMING EVENTS';
+      var floatingText=(settings.floatingText||'YOUR_CHANNEL_NAME').trim() || 'YOUR_CHANNEL_NAME';
+      document.getElementById('floatingTextDisplay').textContent=floatingText;
+      var topRightText=(settings.topRightText||'').trim();
+      var topRightNode=document.getElementById('topRightDisplay');
+      topRightNode.textContent=topRightText;
+      topRightNode.style.display=topRightText ? 'flex' : 'none';
+      document.getElementById('rightPreview').textContent=settings.bottomRight||'MAHINDERPUR (TARN TARAN)';
+      document.getElementById('strip1').style.background=settings.color1||'#10a9e9';
+      document.getElementById('strip2').style.background=settings.color2||'#092d42';
+      document.getElementById('strip1').style.display=settings.showTop===false?'none':'flex';
+      document.getElementById('strip2').style.display=settings.showBottom===false?'none':'flex';
+
+      state.topLines=textLines(settings.topText||'');
+      state.bottomLines=textLines(settings.bottomText||'');
+      state.rightLines=rightTexts(settings.bottomRight||'');
+      state.events=parseEvents(settings.upcomingEvents||'');
+
+      var topSpeed = parseFloat(settings.topTextSpeed || settings.speed1 || 8);
+      var bottomSpeed = parseFloat(settings.bottomTextSpeed || settings.speed2 || 8);
+      marqueeSettings.marquee1 = (isNaN(topSpeed) ? 8 : topSpeed) * 1000;
+      marqueeSettings.marquee2 = (isNaN(bottomSpeed) ? 8 : bottomSpeed) * 1000;
+
+      populateMarquee('marquee1', state.topLines.length ? state.topLines : [''], marqueeSettings.marquee1);
+      populateMarquee('marquee2', state.bottomLines.length ? state.bottomLines : [''], marqueeSettings.marquee2);
+      if(state.events.length){setDate(state.events[0].date);document.getElementById('venuePreview').textContent=state.events[0].text;}
+    }
+
+    function change(strip,box,fn){
+      strip.classList.add('transition-out');box.classList.add('exit');
+      setTimeout(function(){fn();strip.classList.remove('transition-out');strip.classList.add('transition-in');box.classList.remove('exit');box.classList.add('enter');setTimeout(function(){strip.classList.remove('transition-in');box.classList.remove('enter');},600);},400);
+    }
+    function startAnimation(){
+      var rotateEvents=function(){
+        var e=state.events;var r=state.rightLines;
+        if(e.length>1){eventIndex=(eventIndex+1)%e.length;setDate(e[eventIndex].date);document.getElementById('venuePreview').textContent=e[eventIndex].text;}
+        if(r.length>1){rightIndex=(rightIndex+1)%r.length;document.getElementById('rightPreview').textContent=r[rightIndex];}
+      };
+      setInterval(rotateEvents,7000);
+    }
+    applySettings(parseSettings());
+    startAnimation();
+  })();
+  </script>
+</body>
+</html>

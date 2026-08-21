@@ -1,0 +1,297 @@
+<div id="obsTickerApp">
+  <style>
+    #obsTickerApp{font-family:Inter,system-ui,sans-serif;color:#f8fafc;background:#080b10;min-height:680px;box-sizing:border-box;padding:22px;display:flex;flex-direction:column;gap:18px;--ticker-scale:1;--floating-scale:1}
+    #obsTickerApp *{box-sizing:border-box}
+    .ot-head{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+    .ot-font-control{display:grid;grid-template-columns:38px 1fr 38px;gap:8px;align-items:center}
+    .ot-font-btn{height:34px;border:1px solid #303947;background:#0b1016;color:#fff;border-radius:8px;cursor:pointer;font-size:20px;line-height:1}
+    .ot-font-btn:hover{border-color:#38bdf8}
+    .ot-scale-value{font-size:11px;color:#94a3b8;margin-top:6px}
+    .ot-title{font-size:22px;font-weight:800;letter-spacing:-.02em}.ot-sub{font-size:13px;color:#94a3b8;margin-top:3px}
+    .ot-grid{display:grid;grid-template-columns:300px minmax(0,1fr);gap:18px;min-height:0}
+    .ot-panel{background:#11161d;border:1px solid #252d38;border-radius:14px;padding:16px}
+    .ot-panel h3{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin:0 0 14px}
+    .ot-section{background:#0d1218;border:1px solid #1d2734;border-radius:12px;padding:12px 12px 2px;margin-bottom:16px}
+    .ot-section-title{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#7dd3fc;font-weight:700;margin:0 0 10px}
+    .ot-field{margin-bottom:13px}.ot-field label{display:block;font-size:12px;color:#cbd5e1;margin-bottom:6px}
+    .ot-field input,.ot-field select,.ot-field textarea{width:100%;height:38px;border-radius:8px;border:1px solid #303947;background:#0b1016;color:#fff;padding:0 10px;font-size:13px;outline:none;font-family:inherit}
+    .ot-field input:focus,.ot-field select:focus{border-color:#38bdf8}
+    .ot-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}.ot-color{height:38px;padding:4px!important}
+    .ot-check{display:flex;align-items:center;gap:8px;font-size:12px;color:#cbd5e1;margin-top:5px}.ot-check input{width:16px;height:16px}
+    .ot-preview{background:#020406;border:1px solid #252d38;border-radius:14px;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:500px;position:relative}
+    .stage{width:min(100%,900px);aspect-ratio:16/9;background:transparent;position:relative;overflow:hidden}
+    .safe{position:absolute;inset:0;background:linear-gradient(transparent 96%,rgba(255,255,255,.025) 96%);pointer-events:none}
+    .floating-scroller{position:absolute;inset:0;pointer-events:none;z-index:1;overflow:hidden}
+    .floating-text{position:absolute;left:4%;top:18%;white-space:nowrap;font-family:'Arial Black',sans-serif;font-size:calc(28px * var(--floating-scale));color:#d1d1d1;text-shadow:2px 2px 3px rgba(0,0,0,.6);letter-spacing:.04em;opacity:.9;animation:floatingX 12s linear infinite alternate,floatingY 7s ease-in-out infinite alternate}
+    @keyframes floatingX{0%{left:4%}50%{left:42%}100%{left:72%}}
+    @keyframes floatingY{0%{top:18%}50%{top:24%}100%{top:30%}}
+    .ticker-wrap{position:absolute;left:0;right:0;bottom:30px;color:#fff;font-weight:700;text-transform:uppercase;overflow:hidden;z-index:2}
+    .ticker1{height:calc(34px * var(--ticker-scale));background:#10a9e9;display:flex;align-items:center;font-size:calc(12px * var(--ticker-scale));letter-spacing:.02em}
+    .label1{height:100%;background:transparent;display:flex;align-items:center;padding:0 calc(15px * var(--ticker-scale));min-width:calc(130px * var(--ticker-scale));white-space:nowrap;z-index:3;position:relative}
+    .ticker2{height:calc(30px * var(--ticker-scale));background:#092d42;display:flex;align-items:center;font-size:calc(11px * var(--ticker-scale))}
+    .datebox{height:calc(24px * var(--ticker-scale));min-width:calc(48px * var(--ticker-scale));margin:calc(3px * var(--ticker-scale)) 0;display:flex;flex-direction:column;align-items:stretch;justify-content:center;z-index:4;line-height:1;text-align:center;border-radius:5px;overflow:hidden}
+    .date-day{font-size:calc(9px * var(--ticker-scale));font-weight:800;background:#fff;color:#000;flex:1;display:flex;align-items:center;justify-content:center}.date-month{font-size:calc(9px * var(--ticker-scale));font-weight:800;letter-spacing:.05em;background:#10a9e9;color:#000;flex:1;display:flex;align-items:center;justify-content:center}
+    .label2{height:100%;background:#061f2d;display:flex;align-items:center;padding:0 calc(15px * var(--ticker-scale));min-width:calc(130px * var(--ticker-scale));white-space:nowrap;z-index:3;position:relative}
+    .side-text{height:100%;display:flex;align-items:center;justify-content:center;padding:0 calc(10px * var(--ticker-scale));white-space:nowrap;overflow:hidden;font-size:calc(10px * var(--ticker-scale));font-weight:800}.top-right{min-width:calc(55px * var(--ticker-scale))}.bottom-venue{min-width:calc(190px * var(--ticker-scale));justify-content:flex-start}.bottom-right{min-width:calc(145px * var(--ticker-scale))}
+    .upcoming-event{min-width:calc(190px * var(--ticker-scale));height:100%;display:flex;align-items:center;padding:0 calc(10px * var(--ticker-scale));white-space:nowrap;overflow:hidden;font-size:calc(10px * var(--ticker-scale));font-weight:800}
+    .transition-out .upcoming-event{opacity:0;transform:translateX(-28px);transition:.4s cubic-bezier(.22,1,.36,1)}
+    .transition-in .upcoming-event{animation:eventSlideIn .55s cubic-bezier(.22,1,.36,1) both}
+    @keyframes eventSlideIn{from{opacity:0;transform:translateX(28px);filter:blur(2px)}to{opacity:1;transform:translateX(0);filter:blur(0)}}
+    .animated-divider{width:10px;height:100%;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none;z-index:5;background:transparent;color:#fff;font-size:inherit;font-weight:inherit;line-height:1}
+    .animated-divider:before{content:"|";position:static;width:auto;height:auto;background:none;transform:none;opacity:.9;animation:none}
+    .animated-divider:after{display:none}
+    @keyframes dividerBuild{0%{transform:scaleY(.15);opacity:0}45%{transform:scaleY(1);opacity:1}100%{transform:scaleY(1);opacity:.78}}
+    @keyframes dividerSlide{0%{transform:rotate(-45deg) translateX(-8px);opacity:0}45%{transform:rotate(-45deg) translateX(0);opacity:1}100%{transform:rotate(-45deg) translateX(0);opacity:.85}}
+    .ticker1 .marquee-window{clip-path:inset(0 0 0 0);flex:0 0 60%}
+    .ticker2 .marquee-window{clip-path:inset(0 0 0 0);flex:0 0 50%}
+    .transition-out .animated-divider:before,.transition-in .animated-divider:before,.transition-out .animated-divider:after,.transition-in .animated-divider:after{animation:none;transform:none;opacity:.9}
+    .transition-out .side-text{opacity:.25;transform:translateX(8px);transition:.35s ease}.transition-in .side-text{opacity:1;transform:translateX(0);transition:.5s ease}
+    @keyframes dividerOut{to{transform:translateX(14px) scaleY(.15);opacity:0}}
+    @keyframes dividerOutDiamond{to{transform:rotate(-45deg) translateX(14px);opacity:0}}
+    @keyframes dividerIn{from{transform:translateX(-14px) scaleY(.15);opacity:0}to{transform:translateX(0) scaleY(1);opacity:.82}}
+    @keyframes dividerInDiamond{from{transform:rotate(-45deg) translateX(-14px);opacity:0}to{transform:rotate(-45deg) translateX(0);opacity:.95}}
+    .marquee-window{overflow:hidden;flex:1;height:100%;white-space:nowrap;position:relative}
+    .marquee{display:flex;align-items:center;height:100%;min-width:max-content;white-space:nowrap;position:absolute;left:0;top:0;will-change:transform;animation:none}
+    .marquee-track{display:flex;align-items:center;height:100%;width:max-content;min-width:max-content;white-space:nowrap}.marquee-group{display:flex;align-items:center;white-space:nowrap;flex:none}.marquee span{padding:0 16px;display:inline-block;white-space:nowrap;flex:none}.marquee-separator{display:inline-block;padding:0 20px;opacity:.8;white-space:nowrap;flex:none}
+    .marquee-window:before,.marquee-window:after{content:"";display:none}
+    
+    .marquee.exit,.marquee.enter{transform:none;opacity:1;filter:none}
+    .pause .marquee{animation-play-state:paused;transition:none}
+    .ot-badge{position:absolute;top:12px;left:12px;background:#111827cc;border:1px solid #334155;color:#cbd5e1;border-radius:6px;padding:5px 8px;font-size:10px}
+    .ot-actions{display:flex;gap:8px;flex-wrap:wrap}.ot-btn{height:38px;padding:0 14px;border:0;border-radius:8px;background:#0ea5e9;color:white;font-weight:700;cursor:pointer}.ot-btn.secondary{background:#263241;color:#dbeafe}.ot-btn:hover{filter:brightness(1.1)}
+    .ot-url{margin-top:14px;padding:10px;background:#090d13;border:1px solid #252d38;border-radius:8px;color:#7dd3fc;font-size:11px;word-break:break-all}
+    .ot-note{font-size:11px;color:#64748b;line-height:1.45;margin-top:12px}
+    .home-view{min-height:680px;background:radial-gradient(circle at top, rgba(14,165,233,.18), transparent 30%), linear-gradient(180deg, #071018 0%, #0b1219 100%);padding:42px 20px 60px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden}
+    .home-view:before,.home-view:after{content:"";position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none}
+    .home-view:before{width:240px;height:240px;background:rgba(14,165,233,.18);top:30px;left:10%;}
+    .home-view:after{width:220px;height:220px;background:rgba(59,130,246,.12);bottom:40px;right:12%;}
+    .home-title{text-align:center;margin-bottom:28px;position:relative;z-index:1}.home-title h1{margin:0;font-size:clamp(2.1rem,5vw,3.6rem);letter-spacing:-.05em;color:#f8fafc}.home-title p{margin:10px 0 0;color:#94a3b8;font-size:15px;letter-spacing:.01em}
+    .overlay-card{width:min(560px,100%);background:linear-gradient(180deg, rgba(20,27,36,.96), rgba(9,14,20,.97));border:1px solid rgba(148,163,184,.18);border-radius:20px;padding:20px;box-shadow:0 28px 80px rgba(2,6,23,.65), inset 0 1px 0 rgba(255,255,255,.04);text-align:center;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;position:relative;z-index:1}.overlay-card:hover{transform:translateY(-3px);border-color:rgba(56,189,248,.7);box-shadow:0 30px 90px rgba(2,6,23,.72), inset 0 1px 0 rgba(255,255,255,.05)}
+    .overlay-card::before{content:"LIVE OVERLAY";position:absolute;top:-12px;right:20px;background:#0ea5e9;color:#fff;border-radius:999px;padding:6px 10px;font-size:10px;letter-spacing:.12em;font-weight:800;border:1px solid rgba(255,255,255,.08);box-shadow:0 8px 24px rgba(14,165,233,.25)}
+    .home-preview{width:100%;height:120px;background:linear-gradient(180deg,#010406 0%,#020b12 100%);border:1px solid rgba(148,163,184,.15);border-radius:12px;margin-bottom:18px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;position:relative}.home-preview .thumb-strip{position:absolute;left:0;right:0;bottom:0}.thumb-top{height:13px;background:#10a9e9;display:flex;align-items:center;color:#fff;font-size:5px;font-weight:800;padding:0 7px}.thumb-bottom{height:11px;background:#092d42;display:flex;align-items:center;color:#fff;font-size:4px;font-weight:800}.thumb-date{width:18px;height:9px;margin-left:2px;border-radius:2px;overflow:hidden;text-align:center;font-size:3px;line-height:4.5px}.thumb-date .m{height:4.5px;background:#10a9e9;color:#000}.thumb-date .d{height:4.5px;background:#fff;color:#000}.thumb-line{flex:1;text-align:center;white-space:nowrap;overflow:hidden}.thumb-right{width:65px;white-space:nowrap;overflow:hidden}
+    .home-card-info{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:4px}.home-card-info strong{font-size:20px;letter-spacing:-.03em}.home-card-info span{font-size:12px;color:#94a3b8}.use-btn{background:linear-gradient(180deg,#38bdf8,#0ea5e9);color:#fff;border:0;border-radius:10px;padding:12px 24px;font-weight:800;cursor:pointer;transition:transform .2s ease,box-shadow .2s ease,filter .2s ease;box-shadow:0 12px 28px rgba(14,165,233,.3)}.use-btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+    .home-features{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;width:min(760px,100%);margin-top:24px;position:relative;z-index:1}
+    .feature-pill{background:rgba(15,23,42,.6);border:1px solid rgba(148,163,184,.16);border-radius:14px;padding:12px 14px;color:#cbd5e1;font-size:12px;display:flex;align-items:center;gap:10px;backdrop-filter:blur(6px)}
+    .feature-pill .dot{width:9px;height:9px;border-radius:50%;background:#38bdf8;box-shadow:0 0 0 5px rgba(56,189,248,.12)}
+    .editor-view{display:none}.editor-view.active{display:block}.home-view.hidden{display:none}.editor-view.active .ot-grid{display:grid}
+    @media(max-width:800px){#obsTickerApp{padding:14px}.ot-grid{grid-template-columns:1fr}.ot-preview{min-height:280px}.ticker-wrap{bottom:12px}}
+  </style>
+
+  <section class="home-view" id="homeView">
+    <div class="home-title"><h1>OBS Overlay Studio</h1><p>Professional broadcast overlays for your live streams</p></div>
+    <div class="overlay-card">
+      <div class="home-preview"><div class="thumb-strip"><div class="thumb-top">UPCOMING EVENTS <span style="margin-left:8px">| ALL OPEN CLUB SEMI FINAL | MALWA VS HARYANA | LIVE NOW</span></div><div class="thumb-bottom"><div class="thumb-date"><div class="m">AUG</div><div class="d">11</div></div><div class="thumb-right">MALWA VS HARYANA</div><span style="padding:0 3px">|</span><div class="thumb-line">ALL OPEN CLUB SEMI FINAL | MAJHA | DOABA</div><span style="padding:0 3px">|</span><div class="thumb-right">MAHINDERPUR</div></div></div></div>
+      <div class="home-card-info"><div><strong>Live Overlay</strong><span> • 1920 × 1080 • Animated</span></div><button class="use-btn" id="useOverlayBtn" type="button">Use This Overlay</button></div>
+    </div>
+    <div class="home-features">
+      <div class="feature-pill"><span class="dot"></span>Animated ticker</div>
+      <div class="feature-pill"><span class="dot"></span>OBS-ready layout</div>
+      <div class="feature-pill"><span class="dot"></span>Custom branding</div>
+    </div>
+  </section>
+
+  <section class="editor-view" id="editorView">
+  <div class="ot-head">
+    <div><div class="ot-title">OBS Ticker Overlay Builder</div><div class="ot-sub">1920 × 1080 transparent browser-source style overlay</div></div>
+    <div class="ot-actions"><button class="ot-btn secondary" id="pauseBtn" type="button">Pause Animation</button><button class="ot-btn secondary" id="resetBtn" type="button">Reset</button><button class="ot-btn" id="saveBtn" type="button">Save &amp; Use Overlay</button></div>
+  </div>
+
+  <div class="ot-grid">
+    <section class="ot-panel">
+      <h3>Overlay Settings</h3>
+      <div class="ot-section">
+        <div class="ot-section-title">Top ticker</div>
+        <div class="ot-field"><label for="topLabel">Top strip label</label><input id="topLabel" value="UPCOMING EVENTS"></div>
+        <div class="ot-field"><label for="topText">Top texts</label><textarea id="topText" rows="3">"ALL OPEN CLUB SEMI FINAL | MALWA VS HARYANA | LIVE NOW" "UPCOMING KABADDI SEMI FINAL | MALWA VS HARYANA" "PUNJAB CLUB CHAMPIONSHIP | LIVE"</textarea></div>
+        <div class="ot-field"><label for="topRightText">Top right text</label><input id="topRightText" value="" placeholder="LIVE NOW"></div>
+        <div class="ot-field"><label for="speed1">Top speed</label><select id="speed1"><option value="10">Fast</option><option value="18" selected>Normal</option><option value="28">Slow</option></select></div>
+      </div>
+
+      <div class="ot-section">
+        <div class="ot-section-title">Bottom ticker</div>
+        <div class="ot-field"><label for="bottomText">Bottom texts</label><textarea id="bottomText" rows="3">"ALL OPEN CLUB SEMI FINAL | MAJHA | DOABA" "KABADDI TOURNAMENT | LIVE COMMENTARY" "PUNJAB CLUB FINAL | TODAY 7:00 PM"</textarea></div>
+        <div class="ot-field"><label for="bottomRight">Bottom right texts</label><textarea id="bottomRight" rows="3">MAHINDERPUR (TARN TARAN)
+MANUKE GILL (MOGA)
+PUNJAB CLUB</textarea></div>
+        <div class="ot-field"><label for="speed2">Bottom speed</label><select id="speed2"><option value="14">Fast</option><option value="25" selected>Normal</option><option value="38">Slow</option></select></div>
+      </div>
+
+      <div class="ot-field"><label for="floatingText">Floating moving text</label><input id="floatingText" value="YOUR_CHANNEL_NAME" placeholder="YOUR_CHANNEL_NAME"></div>
+      <div class="ot-field">
+        <label for="floatingScale">Floating text size</label>
+        <div class="ot-font-control">
+          <button class="ot-font-btn" type="button" data-floating-step="-0.1" aria-label="Decrease floating text size">−</button>
+          <input id="floatingScale" type="range" min="0.3" max="4.5" step="0.05" value="1.8">
+          <button class="ot-font-btn" type="button" data-floating-step="0.1" aria-label="Increase floating text size">+</button>
+        </div>
+        <div class="ot-scale-value" id="floatingScaleValue">180%</div>
+      </div>
+      <div class="ot-field"><label for="upcomingEvents">Upcoming events</label><textarea id="upcomingEvents" rows="4" style="width:100%;border-radius:8px;border:1px solid #303947;background:#0b1016;color:#fff;padding:10px;font-size:13px;resize:vertical">11 AUG | MALWA VS HARYANA&#10;14 AUG | MAJHA VS DOABA&#10;18 AUG | PUNJAB CLUB FINAL&#10;22 AUG | DELHI VS PUNJAB</textarea></div>
+      <div class="ot-row"><div class="ot-field"><label>Top color</label><input class="ot-color" id="color1" type="color" value="#10a9e9"></div><div class="ot-field"><label>Bottom color</label><input class="ot-color" id="color2" type="color" value="#092d42"></div></div>
+      <div class="ot-field">
+        <label for="fontScale">Font size</label>
+        <div class="ot-font-control">
+          <button class="ot-font-btn" type="button" data-font-step="-0.1" aria-label="Decrease font size">−</button>
+          <input id="fontScale" type="range" min="0.5" max="4.5" step="0.05" value="1.8">
+          <button class="ot-font-btn" type="button" data-font-step="0.1" aria-label="Increase font size">+</button>
+        </div>
+        <div class="ot-scale-value" id="fontScaleValue">180%</div>
+      </div>
+      <div class="ot-check"><input id="showTop" type="checkbox" checked><label for="showTop">Show top strip</label></div>
+      <div class="ot-check"><input id="showBottom" type="checkbox" checked><label for="showBottom">Show bottom strip</label></div>
+      <div class="ot-url" id="urlBox">overlay.html?top=UPCOMING%20EVENTS&bottom=LIVE%20UPDATE</div>
+      <div class="ot-note">Use the generated link in OBS Browser Source. It opens a clean overlay-only page with no editor controls.</div>
+    </section>
+
+    <section class="ot-preview">
+      <div class="stage" id="stage">
+        <div class="ot-badge">1920 × 1080 • TRANSPARENT</div>
+        <div class="floating-scroller"><div class="floating-text" id="floatingTextPreview">YOUR_CHANNEL_NAME</div></div>
+        <div class="ticker-wrap" id="tickerWrap">
+          <div class="ticker1" id="strip1"><div class="label1" id="label1">UPCOMING EVENTS</div><div class="animated-divider"></div><div class="marquee-window" id="window1"><div class="marquee" id="marquee1"><span id="text1">ALL OPEN CLUB SEMI FINAL • MALWA VS HARYANA • LIVE NOW</span></div></div><div class="animated-divider"></div><div class="side-text top-right" id="topRightPreview"></div></div>
+          <div class="ticker2" id="strip2"><div class="datebox"><span class="date-month" id="dateMonthPreview">AUG</span><span class="date-day" id="dateDayPreview">11</span></div><div class="upcoming-event" id="venuePreview">MALWA VS HARYANA</div><div class="animated-divider"></div><div class="marquee-window" id="window2"><div class="marquee marquee2" id="marquee2"><span id="text2">ALL OPEN CLUB SEMI FINAL | MAJHA • DOABA</span></div></div><div class="animated-divider"></div><div class="side-text bottom-right" id="rightPreview">MAHINDERPUR (TARN TARAN)</div></div>
+        </div>
+      </div>
+    </section>
+  </div>
+  </section>
+
+  <script>
+  (function(){
+    var app=document.getElementById('obsTickerApp');
+    function $(id){return app.querySelector('#'+id);}
+    function parseEvents(){
+      var lines=$('upcomingEvents').value.split('\n'), out=[];
+      for(var i=0;i<lines.length;i++){
+        var p=lines[i].split('|');
+        if(p.length>1){out.push({date:p[0].trim(),text:p.slice(1).join('|').trim()});}
+      }
+      return out;
+    }
+    function setDate(s){
+      var p=s.split(/\s+/);
+      $('dateDayPreview').textContent=p[0]||'';
+      $('dateMonthPreview').textContent=(p[1]||'').toUpperCase();
+    }
+    function applyFontScale(value){
+      var scale=parseFloat(value || 1.8);
+      if(isNaN(scale)) scale=1.8;
+      scale=Math.min(4.5,Math.max(0.5,scale));
+      app.style.setProperty('--ticker-scale', String(scale));
+      if($('fontScale')) $('fontScale').value=String(scale);
+      if($('fontScaleValue')) $('fontScaleValue').textContent=Math.round(scale*100)+'%';
+    }
+    function applyFloatingScale(value){
+      var scale=parseFloat(value || 1.8);
+      if(isNaN(scale)) scale=1.8;
+      scale=Math.min(4.5,Math.max(0.3,scale));
+      app.style.setProperty('--floating-scale', String(scale));
+      if($('floatingScale')) $('floatingScale').value=String(scale);
+      if($('floatingScaleValue')) $('floatingScaleValue').textContent=Math.round(scale*100)+'%';
+    }
+    function populateEditorMarquee(id, items, duration){
+      var marquee=$(id);
+      if(!marquee)return;
+      var list=(items||[]).filter(Boolean);
+      if(!list.length)list=[''];
+      marquee.innerHTML='';
+
+      var span=document.createElement('span');
+      span.textContent=list.join(' • ');
+      span.style.position='absolute';
+      span.style.top='50%';
+      span.style.transform='translateY(-50%)';
+      span.style.whiteSpace='nowrap';
+      marquee.appendChild(span);
+
+      requestAnimationFrame(function(){
+        var windowEl=marquee.parentElement;
+        var windowWidth=windowEl.getBoundingClientRect().width;
+        var textWidth=span.getBoundingClientRect().width;
+        var distance=windowWidth+textWidth;
+        var seconds=Math.max(4,duration || 18);
+        var pxPerSecond=distance/seconds;
+        var startTime=null;
+
+        function tick(now){
+          if(startTime===null)startTime=now;
+          var elapsed=(now-startTime)/1000;
+          var x=windowWidth-(elapsed*pxPerSecond);
+
+          // As soon as the text has completely left the left edge,
+          // place it back at the right edge on the very next frame.
+          if(x <= -textWidth){
+            startTime=now;
+            x=windowWidth;
+          }
+          span.style.left=x+'px';
+          requestAnimationFrame(tick);
+        }
+        span.style.left=windowWidth+'px';
+        requestAnimationFrame(tick);
+      });
+    }
+
+    function render(){
+      $('label1').textContent=$('topLabel').value;
+      populateEditorMarquee('marquee1', parseQuotedItems($('topText').value), parseFloat($('speed1').value || 18));
+      populateEditorMarquee('marquee2', parseQuotedItems($('bottomText').value), parseFloat($('speed2').value || 25));
+      var floatingText=$('floatingText').value.trim()||'YOUR_CHANNEL_NAME';
+      $('floatingTextPreview').textContent=floatingText;
+      var topRightText=$('topRightText').value.trim();
+      $('topRightPreview').textContent=topRightText;
+      $('topRightPreview').style.display=topRightText ? 'flex' : 'none';
+      $('strip1').style.background=$('color1').value;
+      $('strip2').style.background=$('color2').value;
+      $('strip1').style.display=$('showTop').checked?'flex':'none';
+      $('strip2').style.display=$('showBottom').checked?'flex':'none';
+      applyFontScale($('fontScale').value);
+      applyFloatingScale($('floatingScale').value);
+      var e=parseEvents(); if(e.length){setDate(e[0].date);$('venuePreview').textContent=e[0].text;}
+    }
+    var ids=['topLabel','topText','floatingText','topRightText','upcomingEvents','bottomText','bottomRight','speed1','speed2','color1','color2','showTop','showBottom','fontScale','floatingScale'];
+    for(var i=0;i<ids.length;i++){var n=$(ids[i]);if(n)n.addEventListener('input',render);} 
+    app.querySelectorAll('.ot-font-btn').forEach(function(btn){btn.addEventListener('click',function(){
+      var isFloating=btn.dataset.floatingStep !== undefined;
+      var input=isFloating ? $('floatingScale') : $('fontScale');
+      if(!input)return;
+      var min=isFloating ? 0.3 : 0.4;
+      var max=isFloating ? 3 : 2.2;
+      var next=parseFloat(input.value)+parseFloat(btn.dataset.fontStep || btn.dataset.floatingStep || 0);
+      input.value=String(Math.min(max,Math.max(min,next))); 
+      render();
+    });});
+    function collectSettings(){var data={};for(var i=0;i<ids.length;i++){var n=$(ids[i]);if(!n)continue;data[ids[i]]=n.type==='checkbox'?n.checked:n.value;}return data;}
+    function encodeSettings(data){var json=JSON.stringify(data);var utf8=encodeURIComponent(json).replace(/%([0-9A-F]{2})/g,function(_,p){return String.fromCharCode(parseInt(p,16));});return btoa(utf8);} 
+    function buildOverlayUrl(data){var url=new URL('overlay.html', window.location.href);url.hash='cfg='+encodeSettings(data);return url.toString();}
+    function saveSettings(){var data=collectSettings();localStorage.setItem('obsTickerSettings',JSON.stringify(data));var overlayUrl=buildOverlayUrl(data);render();$('urlBox').textContent=overlayUrl;try{navigator.clipboard.writeText(overlayUrl);}catch(e){}window.open(overlayUrl,'_blank','noopener,noreferrer');}
+    function loadSettings(){try{var data=JSON.parse(localStorage.getItem('obsTickerSettings')||'null');if(!data)return;for(var i=0;i<ids.length;i++){var n=$(ids[i]);if(!n||data[ids[i]]===undefined)continue;if(n.type==='checkbox')n.checked=data[ids[i]];else n.value=data[ids[i]];} }catch(e){}}
+    $('saveBtn').onclick=function(){saveSettings();};
+    $('pauseBtn').onclick=function(){app.classList.toggle('pause');$('pauseBtn').textContent=app.classList.contains('pause')?'Resume Animation':'Pause Animation';};
+    $('resetBtn').onclick=function(){for(var i=0;i<ids.length;i++){var n=$(ids[i]);if(!n)continue;if(n.type==='checkbox')n.checked=n.defaultChecked;else n.value=n.defaultValue;}render();};
+    $('useOverlayBtn').onclick=function(){$('homeView').classList.add('hidden');$('editorView').classList.add('active');render();};
+    var top=0,eventIndex=0,rightIndex=0,bottomTextIndex=0;
+    function parseQuotedItems(raw){
+      var text=(raw||'').trim();
+      if(!text)return [];
+      var items=[];
+      var re=/"([^"]+)"/g;
+      var m;
+      while((m=re.exec(text))!==null){items.push(m[1].trim());}
+      if(items.length){return items.filter(Boolean);}
+      return text.split(',').map(function(x){return x.trim();}).filter(Boolean);
+    }
+    function textLines(id){return parseQuotedItems($(id).value);}
+    function rightTexts(){return parseQuotedItems($('bottomRight').value);}
+    function change(strip,box,fn){
+      if(app.classList.contains('pause'))return;
+      strip.classList.add('transition-out');box.classList.add('exit');
+      setTimeout(function(){fn();strip.classList.remove('transition-out');strip.classList.add('transition-in');box.classList.remove('exit');box.classList.add('enter');setTimeout(function(){strip.classList.remove('transition-in');box.classList.remove('enter');},600);},400);
+    }
+    setInterval(function(){var e=parseEvents();if(e.length>1){eventIndex=(eventIndex+1)%e.length;setDate(e[eventIndex].date);$('venuePreview').textContent=e[eventIndex].text;}},7000);
+    loadSettings();
+    render();
+    $('urlBox').textContent=buildOverlayUrl(collectSettings());
+  })();
+  </script>
+</div>
